@@ -1,6 +1,7 @@
 # Flood Mapping of Cyclone Ditwah (Sri Lanka, 2025) with Sentinel-2 NDWI
 **[Open the interactive map](https://misba-pk.github.io/srilanka-flood-mapping/web/)**
-![webmap](images/web_map.png)
+
+![webmap](images/false_colour.png)
 
 Mapping and validating the flood extent along the **Kelani Ganga river (Colombo / Gampaha)** after Cyclone Ditwah, using free Sentinel-2 imagery, NDWI, pre-flood change detection and simple morphological post-processing. The result is validated against the official **Copernicus EMS** flood delineation.
 
