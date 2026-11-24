@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Flood Mapping – Cyclone Ditwah, Sri Lanka (2025)</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    html, body, #map { height: 100%; margin: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    .panel {
+      background: rgba(255, 255, 255, 0.95); padding: 10px 14px; border-radius: 6px;
+      box-shadow: 0 1px 6px rgba(0, 0, 0, 0.3); font-size: 13px; line-height: 1.45; max-width: 290px;
+    }
+    .panel h1 { font-size: 15px; margin: 0 0 4px; }
+    .panel p { margin: 0 0 6px; color: #444; }
+    .panel table { border-collapse: collapse; margin-top: 4px; }
+    .panel td { padding: 1px 10px 1px 0; }
+    .legend i { display: inline-block; width: 14px; height: 14px; margin-right: 6px; vertical-align: -2px; }
+  </style>
+</head>
+<body>
+<div id="map"></div>
+<script>
+  const map = L.map("map");
+
+  const imagery = L.tileLayer(
+    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    { maxZoom: 19, attribution: "Tiles &copy; Esri &mdash; Esri, Maxar, Earthstar Geographics, GIS User Community" });
+  const osm = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+    { maxZoom: 19, attribution: "&copy; OpenStreetMap contributors" });
+  imagery.addTo(map);
+
+  const styles = {
+    flood: { color: "#1565c0", weight: 0.5, fillColor: "#1e88e5", fillOpacity: 0.6 },
+    ems:   { color: "#ff9800", weight: 1.5, fill: false, dashArray: "4 3" },
+    aoi:   { color: "#ffffff", weight: 2, fill: false, dashArray: "8 6" },
+  };
+
+  const load = (url) => fetch(url).then((r) => r.json());
+
+  Promise.all([load("data/aoi.geojson"), load("data/ems_flood.geojson"), load("data/flood.geojson")])
+    .then(([aoi, ems, flood]) => {
+      const aoiLayer = L.geoJSON(aoi, { style: styles.aoi }).addTo(map);
+      const emsLayer = L.geoJSON(ems, { style: styles.ems });
+      const floodLayer = L.geoJSON(flood, {
+        style: styles.flood,
+        onEachFeature: (f, layer) => layer.bindPopup(`<b>Flooded patch</b><br>${f.properties.area_ha} ha`),
+      }).addTo(map);
+      map.fitBounds(aoiLayer.getBounds());
+
+      L.control.layers(
+        { "Satellite": imagery, "OpenStreetMap": osm },
+        {
+          "Flood (this project, Sentinel-2)": floodLayer,
+          "Flood (Copernicus EMS reference)": emsLayer,
+          "EMS area of interest": aoiLayer,
+        },
+        { collapsed: false }
+      ).addTo(map);
+    })
+    .catch((err) => alert("Could not load the map data. Run make_webmap.py and open the page through a web server.\n" + err));
+
+  const info = L.control({ position: "topleft" });
+  info.onAdd = () => {
+    const div = L.DomUtil.create("div", "panel");
+    div.innerHTML = `
+      <h1>Cyclone Ditwah floods, Sri Lanka</h1>
+      <p>Kelani Ganga floodplain, 30 Nov 2025.<br>Sentinel-2 NDWI with pre-flood change detection,
+         validated against Copernicus EMS (EMSR851).</p>
+      <table>
+        <tr><td>IoU</td><td><b>0.62</b></td><td>F1</td><td><b>0.77</b></td></tr>
+        <tr><td>Precision</td><td><b>0.77</b></td><td>Recall</td><td><b>0.77</b></td></tr>
+      </table>`;
+    L.DomEvent.disableClickPropagation(div);
+    return div;
+  };
+  info.addTo(map);
+
+  const legend = L.control({ position: "bottomright" });
+  legend.onAdd = () => {
+    const div = L.DomUtil.create("div", "panel legend");
+    div.innerHTML = `
+      <i style="background:#1e88e5;opacity:.7"></i>Flood (this project)<br>
+      <i style="border:2px dashed #ff9800"></i>Flood (EMS reference)<br>
+      <i style="border:2px dashed #888"></i>EMS area of interest`;
+    return div;
+  };
+  legend.addTo(map);
+</script>
+</body>
+</html>
