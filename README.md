@@ -4,7 +4,7 @@ Mapping and validating the flood extent along the **Kelani Ganga river (Colombo 
 
 **Final result: IoU 0.62 · F1 0.77 · precision 0.77 · recall 0.77** (mapped flood 33.4 km² vs. 33.7 km² in the reference)
 
-![Comparison with Copernicus EMS](images/compare_final.png)
+![Comparison with Copernicus EMS](images/compare.png)
 *Green = agreed, red = only this map, blue = missed (reference: Copernicus EMS EMSR851)*
 
 ## Event and Study Area
